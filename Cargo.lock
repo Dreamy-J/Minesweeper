@@ -3,13 +3,6 @@
 version = 4
 
 [[package]]
-name = "Minesweeper"
-version = "0.1.0"
-dependencies = [
- "bevy",
-]
-
-[[package]]
 name = "ab_glyph"
 version = "0.2.32"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3238,6 +3231,13 @@ dependencies = [
  "log",
  "objc",
  "paste",
+]
+
+[[package]]
+name = "minesweeper"
+version = "0.1.0"
+dependencies = [
+ "bevy",
 ]
 
 [[package]]
