@@ -2,6 +2,8 @@
 name = "Minesweeper"
 version = "0.1.0"
 edition = "2024"
+authors = ["woruo03 <woruo03@gmail.com>"]
+description = "Minesweeper Game"
 
 [features]
 default = ["dev-dynamic-linking"]
@@ -15,6 +17,7 @@ opt-level = 3
 
 [profile.dev]
 opt-level = 1
+debug = true
 
 [profile.release]
 lto = "thin"          # 薄 LTO 优化
