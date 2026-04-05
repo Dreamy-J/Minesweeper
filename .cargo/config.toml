@@ -1,0 +1,7 @@
+[target.'cfg(all())']
+rustflags = ["-C", "link-arg=-fuse-ld=mold"]
+
+[alias]
+rcheck = "check --release --no-default-features"
+rbuild = "build --release --no-default-features"
+rrun = "run --release --no-default-features"

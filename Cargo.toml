@@ -1,0 +1,23 @@
+[package]
+name = "Minesweeper"
+version = "0.1.0"
+edition = "2024"
+
+[features]
+default = ["dev-dynamic-linking"]
+dev-dynamic-linking = ["bevy/dynamic_linking"]
+
+[dependencies]
+bevy = "0.18.1"
+
+[profile.dev.package."*"]
+opt-level = 3
+
+[profile.dev]
+opt-level = 1
+
+[profile.release]
+lto = "thin"          # 薄 LTO 优化
+codegen-units = 1     # 提升代码生成质量
+strip = true          # 移除符号表，减小体积
+panic = "abort"       # 减小二进制体积
