@@ -76,79 +76,138 @@ Minesweeper/
 
 ### 3.1 整体架构图
 
+#### 3.1.1 模块依赖关系图
+
 ```mermaid
-graph TB
-    subgraph Entry[入口层]
-        main[main.rs]
-        lib[lib.rs - MinesweeperPlugin]
+flowchart TD
+    subgraph Core["📦 Core 核心模块"]
+        direction LR
+        C1["components.rs"]
+        C2["events.rs"]
+        C3["resources.rs"]
     end
 
-    subgraph Core[核心层]
-        components[components.rs - 组件]
-        events[events.rs - 事件]
-        resources[resources.rs - 资源]
+    subgraph Game["🎮 Game 游戏逻辑"]
+        direction LR
+        G1["flood_fill.rs"]
+        G2["grid.rs"]
+        G3["minefield.rs"]
+        G4["rules.rs"]
     end
 
-    subgraph GameLogic[游戏逻辑层]
-        flood_fill[flood_fill.rs - 连通区域展开]
-        grid[grid.rs - 网格视觉]
-        minefield[minefield.rs - 地雷布置]
-        rules[rules.rs - 规则判定]
+    subgraph Systems["⚡ Systems 系统"]
+        direction LR
+        S1["input.rs"]
+        S2["game_logic.rs"]
+        S3["timer.rs"]
+        S4["setup.rs"]
     end
 
-    subgraph Systems[系统层]
-        input[input.rs - 输入处理]
-        game_logic[game_logic.rs - 游戏逻辑]
-        timer[timer.rs - 计时器]
-        setup[setup.rs - 初始化]
-        audio[audio.rs - 音频 - 待实现]
+    subgraph UI["🎨 UI 界面"]
+        direction LR
+        U1["grid_renderer.rs"]
+        U2["hud.rs"]
     end
 
-    subgraph UI[UI层]
-        grid_renderer[grid_renderer.rs - 网格渲染]
-        hud[hud.rs - HUD显示]
-        menu[menu.rs - 菜单 - 待实现]
+    subgraph State["📋 State 状态"]
+        direction LR
+        ST1["game_state.rs"]
     end
 
-    subgraph State[状态层]
-        game_state[game_state.rs - 游戏状态]
-        scene_manager[scene_manager.rs - 场景管理]
+    subgraph Utils["🔧 Utils 工具"]
+        direction LR
+        UT1["helpers.rs"]
     end
 
-    subgraph Utils[工具层]
-        helpers[helpers.rs - 辅助函数]
+    Core --> Game
+    Core --> Systems
+    Core --> UI
+    Core --> State
+    
+    Game --> Core
+    Systems --> Game
+    Systems --> State
+    Systems --> Utils
+    
+    UI --> Game
+    UI --> Core
+    UI --> State
+    UI --> Utils
+```
+
+#### 3.1.2 数据流向图
+
+```mermaid
+flowchart LR
+    subgraph Input["🖱️ 输入源"]
+        direction TB
+        Mouse["鼠标点击"]
+        Keyboard["键盘按键"]
     end
 
-    main --> lib
-    lib --> components
-    lib --> events
-    lib --> resources
-    lib --> input
-    lib --> game_logic
-    lib --> timer
-    lib --> grid_renderer
-    lib --> hud
-    lib --> setup
-    lib --> game_state
+    subgraph Event["📨 事件层"]
+        direction TB
+        CellEvent["CellActionEvent"]
+    end
 
-    input --> helpers
-    input --> events
-    game_logic --> flood_fill
-    game_logic --> minefield
-    game_logic --> rules
-    game_logic --> game_state
-    grid_renderer --> grid
-    grid_renderer --> components
-    hud --> helpers
-    timer --> game_state
-    setup --> components
+    subgraph Process["🔄 处理层"]
+        direction TB
+        Logic["game_logic.rs"]
+        Timer["timer.rs"]
+    end
 
-    flood_fill --> resources
-    minefield --> resources
-    rules --> resources
-    grid --> components
-    grid --> resources
-    grid --> helpers
+    subgraph Data["💾 数据存储"]
+        direction TB
+        Board["Board"]
+        Session["GameSession"]
+    end
+
+    subgraph Output["🖥️ 输出层"]
+        direction TB
+        Grid["网格渲染"]
+        HUD["HUD显示"]
+    end
+
+    Mouse --> CellEvent
+    Keyboard --> CellEvent
+    CellEvent --> Logic
+    Logic --> Board
+    Logic --> Session
+    Timer --> Session
+    Board --> Grid
+    Session --> HUD
+    Board --> HUD
+```
+
+#### 3.1.3 系统执行时序
+
+```mermaid
+sequenceDiagram
+    participant User as 用户操作
+    participant Input as Input系统
+    participant Event as 事件总线
+    participant Logic as Logic系统
+    participant Data as 资源数据
+    participant Render as Render系统
+
+    User->>Input: 鼠标/键盘输入
+    Input->>Event: 写入CellActionEvent
+    
+    rect rgb(232, 245, 233)
+        Note over Event,Data: Logic阶段
+        Event->>Logic: 读取事件
+        Logic->>Data: 修改Board/Session
+        Logic->>Logic: 更新计时器
+    end
+    
+    rect rgb(255, 243, 224)
+        Note over Data,Render: Render阶段
+        Data->>Render: 读取最新状态
+        Render->>Render: 同步网格实体
+        Render->>Render: 更新精灵颜色
+        Render->>Render: 更新文本标签
+        Render->>Render: 更新HUD
+    end
 ```
 
 ### 3.2 ECS 架构说明
