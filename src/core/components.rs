@@ -65,18 +65,6 @@ pub struct MainCamera;
 #[derive(Component)]
 pub struct UICamera;
 
-/// 游戏计时
-#[derive(Component, Default)]
-pub struct GameTimer {
-    pub elapsed: f32,
-}
-
-impl GameTimer {
-    pub fn new() -> Self {
-        Self::default()
-    }
-}
-
 /// 游戏难度
 #[derive(Component)]
 pub struct DifficultyConfig {
