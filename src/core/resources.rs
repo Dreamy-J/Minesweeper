@@ -24,8 +24,9 @@ impl Default for CellData {
     }
 }
 
-#[derive(Resource, Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Resource, Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum DifficultyPreset {
+    #[default]
     Beginner,
     Intermediate,
     Expert,
@@ -62,12 +63,6 @@ impl DifficultyPreset {
             Self::Intermediate => "Intermediate",
             Self::Expert => "Expert",
         }
-    }
-}
-
-impl Default for DifficultyPreset {
-    fn default() -> Self {
-        Self::Beginner
     }
 }
 
