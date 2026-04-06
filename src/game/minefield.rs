@@ -1,8 +1,27 @@
+//! 地雷布置算法模块
+//!
+//! 实现了随机布置地雷的逻辑，确保首次点击位置及其周围
+//! 区域安全（无地雷）。
+
 use rand::seq::SliceRandom;
 
 use crate::core::resources::Board;
 
+/// 布置地雷（带安全区）
+///
+/// 在棋盘上随机布置指定数量的地雷，同时确保指定的安全位置
+/// 及其周围 3x3 区域内不会有地雷。
+///
+/// 如果棋盘过于密集（地雷数 > 可用位置数），则回退到
+/// 仅排除点击位置本身。
+///
+/// # 参数
+///
+/// * `board` - 游戏棋盘的可变引用
+/// * `safe_row` - 安全区中心行号
+/// * `safe_col` - 安全区中心列号
 pub fn place_mines_with_safe_zone(board: &mut Board, safe_row: u32, safe_col: u32) {
+    // 先清空所有地雷状态
     for row in 0..board.rows {
         for col in 0..board.cols {
             if let Some(cell) = board.cell_mut(row, col) {
@@ -12,6 +31,7 @@ pub fn place_mines_with_safe_zone(board: &mut Board, safe_row: u32, safe_col: u3
         }
     }
 
+    // 收集所有候选位置（排除安全区）
     let mut candidates = Vec::with_capacity(board.cell_count());
     let mut forbidden = board.neighbors(safe_row, safe_col);
     forbidden.push((safe_row, safe_col));
@@ -24,8 +44,8 @@ pub fn place_mines_with_safe_zone(board: &mut Board, safe_row: u32, safe_col: u3
         }
     }
 
+    // 如果候选位置不够，回退到仅排除点击位置
     if (board.total_mines as usize) > candidates.len() {
-        // Fallback to only exclude the clicked cell when the board is too dense.
         candidates.clear();
         for row in 0..board.rows {
             for col in 0..board.cols {
@@ -36,19 +56,30 @@ pub fn place_mines_with_safe_zone(board: &mut Board, safe_row: u32, safe_col: u3
         }
     }
 
+    // 使用 Fisher-Yates 洗牌算法随机选择地雷位置
     let mut rng = rand::rng();
     candidates.shuffle(&mut rng);
 
+    // 布置地雷
     for &(row, col) in candidates.iter().take(board.total_mines as usize) {
         if let Some(cell) = board.cell_mut(row, col) {
             cell.is_mine = true;
         }
     }
 
+    // 重新计算每个单元格周围的地雷数
     recalculate_adjacent_counts(board);
     board.mines_placed = true;
 }
 
+/// 重新计算所有单元格周围的地雷数量
+///
+/// 遍历棋盘上的每个单元格，统计其 8 个邻居中的地雷数量，
+/// 并更新到 `adjacent_mines` 字段。
+///
+/// # 参数
+///
+/// * `board` - 游戏棋盘的可变引用
 pub fn recalculate_adjacent_counts(board: &mut Board) {
     for row in 0..board.rows {
         for col in 0..board.cols {

@@ -1,7 +1,27 @@
+//! 连通区域展开算法模块
+//!
+//! 实现了 BFS（广度优先搜索）算法，用于在玩家点击空白区域时
+//! 自动展开所有相连的安全区域。
+
 use std::collections::VecDeque;
 
 use crate::core::resources::{Board, CellVisibility};
 
+/// 展开连通的安全区域
+///
+/// 从起始位置开始，使用 BFS 算法递归展开所有相邻的安全单元格。
+/// 当遇到 `adjacent_mines == 0` 的单元格时，继续向外扩展；
+/// 当遇到 `adjacent_mines > 0` 的单元格时，只揭开该单元格但不再扩展。
+///
+/// # 参数
+///
+/// * `board` - 游戏棋盘的可变引用
+/// * `start_row` - 起始行号
+/// * `start_col` - 起始列号
+///
+/// # 返回值
+///
+/// 返回本次操作新揭开的单元格数量。
 pub fn reveal_connected_safe_area(board: &mut Board, start_row: u32, start_col: u32) -> u32 {
     let mut revealed_safe = 0;
     let mut queue = VecDeque::new();
@@ -13,15 +33,18 @@ pub fn reveal_connected_safe_area(board: &mut Board, start_row: u32, start_col: 
             None => continue,
         };
 
+        // 跳过地雷和已揭开的单元格
         if is_mine || visibility != CellVisibility::Hidden {
             continue;
         }
 
+        // 揭开当前单元格
         if let Some(cell) = board.cell_mut(row, col) {
             cell.visibility = CellVisibility::Revealed;
             revealed_safe += 1;
         }
 
+        // 如果当前单元格周围没有地雷，继续扩展邻居
         if adjacent == 0 {
             for (nr, nc) in board.neighbors(row, col) {
                 if board
