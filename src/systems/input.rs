@@ -1,31 +1,65 @@
 use bevy::prelude::*;
+use bevy::window::PrimaryWindow;
 
 use crate::core::components::MainCamera;
-use crate::core::resources::GameConfig;
-use crate::core::resources::GridTable;
-use crate::utils::helpers::world_to_vec;
+use crate::core::events::CellActionEvent;
+use crate::core::resources::{Board, DifficultyPreset, GameConfig};
+use crate::utils::helpers::world_to_cell;
 
-// 输入处理
-
-pub fn handle_mouse_input(
-    mouse_button_input: Res<ButtonInput<MouseButton>>,
-    windows: Query<&Window>,
-    cameras: Query<(&Camera, &GlobalTransform), With<MainCamera>>,
-    game_config: Res<GameConfig>,
-    grid_table: ResMut<GridTable>,
+pub fn emit_player_actions(
+    mouse_buttons: Res<ButtonInput<MouseButton>>,
+    keyboard: Res<ButtonInput<KeyCode>>,
+    windows: Query<&Window, With<PrimaryWindow>>,
+    camera_query: Query<(&Camera, &GlobalTransform), With<MainCamera>>,
+    board: Res<Board>,
+    config: Res<GameConfig>,
+    mut event_writer: MessageWriter<CellActionEvent>,
 ) {
-    if mouse_button_input.just_pressed(MouseButton::Left) {
-        let window = windows.single().unwrap();
-        let (camera, camera_transform) = cameras.single().unwrap();
+    if keyboard.just_pressed(KeyCode::KeyR) {
+        event_writer.write(CellActionEvent::restart());
+    }
 
-        if let Some(cursor_pos) = window.cursor_position()
-            && let Ok(world_pos) = camera.viewport_to_world_2d(camera_transform, cursor_pos)
-        {
-            let (i, j) = world_to_vec(world_pos.x, world_pos.y, &game_config);
-            println!("Clicked at: ({}, {})", i, j);
-            if let Some(entity) = grid_table.get_entity(i, j, &game_config) {
-                println!("Entity: {:?}", entity);
-            }
+    if keyboard.just_pressed(KeyCode::Digit1) {
+        event_writer.write(CellActionEvent::change_difficulty(
+            DifficultyPreset::Beginner,
+        ));
+    }
+    if keyboard.just_pressed(KeyCode::Digit2) {
+        event_writer.write(CellActionEvent::change_difficulty(
+            DifficultyPreset::Intermediate,
+        ));
+    }
+    if keyboard.just_pressed(KeyCode::Digit3) {
+        event_writer.write(CellActionEvent::change_difficulty(DifficultyPreset::Expert));
+    }
+
+    let is_left = mouse_buttons.just_pressed(MouseButton::Left);
+    let is_right = mouse_buttons.just_pressed(MouseButton::Right);
+    if !is_left && !is_right {
+        return;
+    }
+
+    let Ok(window) = windows.single() else {
+        return;
+    };
+    let Ok((camera, camera_transform)) = camera_query.single() else {
+        return;
+    };
+
+    let Some(cursor_pos) = window.cursor_position() else {
+        return;
+    };
+
+    let Ok(world) = camera.viewport_to_world_2d(camera_transform, cursor_pos) else {
+        return;
+    };
+
+    if let Some((row, col)) = world_to_cell(world, &board, &config) {
+        if is_left {
+            event_writer.write(CellActionEvent::reveal(row, col));
+        }
+        if is_right {
+            event_writer.write(CellActionEvent::toggle_flag(row, col));
         }
     }
 }
