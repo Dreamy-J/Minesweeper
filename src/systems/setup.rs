@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 
 use crate::core::components::MainCamera;
-use crate::core::resources::GameConfig;
+use crate::core::resources::{GameConfig, GridTable};
 use crate::game::grid::create_grid;
 
 //* 初始化系统
@@ -15,6 +15,7 @@ pub fn setup(mut commands: Commands) {
 pub fn restart_game(
     mut commands: Commands,
     config: Res<GameConfig>,
+    mut grid_table: ResMut<GridTable>, 
 ) {
-    create_grid(&mut commands, &config);
+    create_grid(&mut commands, &config, &mut grid_table);
 }
